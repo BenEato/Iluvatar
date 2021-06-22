@@ -1,4 +1,4 @@
-from socket import socket, AF_INET, SOCK_STREAM, SO_REUSEADDR, SOL_SOCKET, error
+from socket import socket, AF_INET, SOCK_STREAM, SO_REUSEADDR, SOL_SOCKET, SOCK_DGRAM
 import datetime
 import sqlite3
 import re
@@ -64,3 +64,6 @@ while True:
         except BrokenPipeError:
             break
 
+        except:
+            print("timed out")
+            break
