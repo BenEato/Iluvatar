@@ -6,10 +6,6 @@ from querycontacts import ContactFinder
 from ip2geotools.databases.noncommercial import DbIpCity
 import atexit
 
-sk=socket(AF_INET,SOCK_STREAM)
-sk.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-sk.bind(('192.168.1.110',24))
-
 # Function for long and lat
 
 def geo(ip):
@@ -40,7 +36,7 @@ connsq.commit()
 #Listen for connections
 sk=socket(AF_INET,SOCK_STREAM)
 sk.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-sk.bind(('192.168.1.110',23))
+sk.bind(('0.0.0.0',23))
 
 while True:
     sk.listen()
