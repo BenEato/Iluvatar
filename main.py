@@ -6,6 +6,7 @@ from querycontacts import ContactFinder
 from ip2geotools.databases.noncommercial import DbIpCity
 import atexit
 
+
 # Function for long and lat
 
 def geo(ip):
@@ -19,6 +20,14 @@ def geo(ip):
         print(response.longitude)
         return response.latitude, "#", response.longitude
 
+# Get source ip and port
+
+def ipandport(inf):
+    srcipandport = inf.split("raddr",1)[1]
+    infip, infprt = srcipandport.split(",")
+    infprt = re.sub("[)>]", "", infprt)
+    infip = re.sub("[=(']", "", infip)
+    return infip, infprt
 # Functions for adding to database
 
 def add_entry(srcip, srcport, thetime, abuse, latitude, longitude):
@@ -46,15 +55,13 @@ while True:
     constr = str(conn)
 # Sanitizing the connection information to place into database (src, prt and abuse)
 #TODO: MAKE THIS INTO FUNCTIONS
-    print(constr.split("raddr",1)[1])
-    srcipandport = constr.split("raddr",1)[1]
-    srcip, srcprt = srcipandport.split(",")
-    srcprt = re.sub("[)>]", "", srcprt)
-    srcip = re.sub("[=(']", "", srcip)
+    srcip, srcprt = ipandport(constr)
     curtime = time.time()
     print(srcip)
     print(srcprt)
     print(time.time())
+
+#getting my abuse email
     qf = ContactFinder()
     print(qf.find(srcip))
     abuse = qf.find(srcip)
@@ -68,15 +75,36 @@ while True:
 
     #update our database with the connection
     add_entry(srcip, srcprt, curtime, abuse, latitude, longitude)
-    while True:
 
-        try:
-            conn.send(b"Welcome to FBI Secret Database\n username:")
+    try:
+        conn.send(b"Welcome to the FBI Secret Database\nUsername:")
+        hasprovidedusename = 0
+# Extremely hacky attempt at some interaction
+        while True:
             data = conn.recv(1024)
             print(data.decode('utf-8', "ignore"))
+           # print(len(data))
 
-        except BrokenPipeError:
-            break
+            if hasprovidedusename == 2:
+                conn.send(b"root@honeypie:~$")
 
-        except:
-            break
+                continue
+            if hasprovidedusename == 1:
+                conn.send(b"Welcome to the honeypot!:\nroot@honeypie:~$")
+                hasprovidedusename = 2
+                continue
+
+
+            if len(data) == 27:
+                continue
+
+            if len(data) > 0:
+                conn.send(b"Password:")
+                hasprovidedusename = 1
+                continue
+
+    except BrokenPipeError:
+        break
+
+    except:
+        continue
