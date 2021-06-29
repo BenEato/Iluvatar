@@ -83,7 +83,7 @@ while True:
         while True:
             data = conn.recv(1024)
             print(data.decode('utf-8', "ignore"))
-            print(len(data))
+    #       print(len(data))
 
             if hasprovidedusename == 2:
                 conn.send(b"root@honeypie:~$")
@@ -105,7 +105,7 @@ while True:
                 hasprovidedusename = 1
                 continue
 
-    except BrokenPipeError:
+ #   except BrokenPipeError:
         break
 
     except:
