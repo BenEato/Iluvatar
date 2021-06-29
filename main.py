@@ -50,7 +50,7 @@ sk.bind(('0.0.0.0',23))
 while True:
     sk.listen()
     conn,addr = sk.accept()
-    conn.settimeout(10)
+    conn.settimeout(60)
 
     constr = str(conn)
 # Sanitizing the connection information to place into database (src, prt and abuse)
@@ -83,7 +83,7 @@ while True:
         while True:
             data = conn.recv(1024)
             print(data.decode('utf-8', "ignore"))
-           # print(len(data))
+            print(len(data))
 
             if hasprovidedusename == 2:
                 conn.send(b"root@honeypie:~$")
@@ -94,9 +94,11 @@ while True:
                 hasprovidedusename = 2
                 continue
 
-
-            if len(data) == 27:
+            if len(data) in range(20, 30):
                 continue
+
+          #  if len(data) == 27:
+           #     continue
 
             if len(data) > 0:
                 conn.send(b"Password:")
