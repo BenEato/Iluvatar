@@ -50,7 +50,7 @@ sk.bind(('0.0.0.0',23))
 while True:
     sk.listen()
     conn,addr = sk.accept()
-    conn.settimeout(60)
+    conn.settimeout(10)
 
     constr = str(conn)
 # Sanitizing the connection information to place into database (src, prt and abuse)
@@ -79,11 +79,21 @@ while True:
     try:
         conn.send(b"Welcome to the FBI Secret Database\nUsername:")
         hasprovidedusename = 0
+        timeout = time.time()
 # Extremely hacky attempt at some interaction
         while True:
+
             data = conn.recv(1024)
             print(data.decode('utf-8', "ignore"))
-    #       print(len(data))
+            print(len(data))
+
+            # set timeout for stuck connections
+
+            print(time.time())
+            print(timeout)
+
+            if time.time() > timeout + 10:
+                conn.close()
 
             if hasprovidedusename == 2:
                 conn.send(b"root@honeypie:~$")
@@ -109,4 +119,5 @@ while True:
         break
 
     except:
+        conn.close()
         continue
