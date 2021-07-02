@@ -6,6 +6,19 @@ from querycontacts import ContactFinder
 from ip2geotools.databases.noncommercial import DbIpCity
 import atexit
 
+banner = b"""
+
+ _    _                  _             
+| |  | |                (_)            
+| |  | | __ _ _ __ _ __  _ _ __   __ _ 
+| |/\| |/ _` | '__| '_ \| | '_ \ / _` |
+\  /\  / (_| | |  | | | | | | | | (_| |
+ \/  \/ \__,_|_|  |_| |_|_|_| |_|\__, |
+                                  __/ |
+                                 |___/ 
+THIS IS A DUMMY SERVER TRACKING COMPROMISED HOSTS, CLOSE YOUR CLIENT IMMEDIATELY.
+VOILATIONS WILL BE REPORTED TO THE ABUSE CONTACT ASSOCIATED WITH YOUR IP ADDRESS
+root@honeypie:~$"""
 
 # Function for long and lat
 
@@ -30,8 +43,8 @@ def ipandport(inf):
     return infip, infprt
 # Functions for adding to database
 
-def add_entry(srcip, srcport, thetime, abuse, latitude, longitude):
-    c.execute('''INSERT INTO information VALUES ("{}", "{}", "{}", "{}", "{}", "{}") '''.format(srcip, srcport, thetime, abuse, latitude, longitude))  # insert values
+def add_entry(uid, srcip, srcport, thetime, abuse, latitude, longitude, user, password, command):
+    c.execute('''INSERT INTO information VALUES ("{}","{}", "{}", "{}", "{}", "{}", "{}", "{}", "{}", "{}") '''.format(uid, srcip, srcport, thetime, abuse, latitude, longitude, user, password, command))  # insert values
     connsq.commit()
 
 
@@ -39,13 +52,26 @@ def add_entry(srcip, srcport, thetime, abuse, latitude, longitude):
 connsq = sqlite3.connect('conn_data.db')  # actually creates file called student_data.db
 c = connsq.cursor()
 c.execute(
-    '''CREATE TABLE IF NOT EXISTS information (source IP text, port text, time text, abuse text, latitude text, longitude text) ''')  # add "information" table to database
+    '''CREATE TABLE IF NOT EXISTS information (uid text, source IP text, port text, time text, abuse text, latitude text, longitude text, user text, password text, command text) ''')  # add "information" table to database
 connsq.commit()
 
 #Listen for connections
 sk=socket(AF_INET,SOCK_STREAM)
 sk.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 sk.bind(('0.0.0.0',23))
+
+# set my uid
+#TODO: Need a try here - try to get value, if not set uid to 0
+try:
+    testuid = c.execute("SELECT uid FROM information ORDER BY uid DESC LIMIT 1").fetchall()
+    uid = int(testuid[0][0])
+
+except:
+    uid = 0
+#testy = str(testuid[0])
+#uidextract = re.findall(r'\d', str(testuid[0]))
+#uid = int(uidextract[0])
+#uid = 0
 
 while True:
     sk.listen()
@@ -73,13 +99,15 @@ while True:
     longitude = LonLat[2]
 
 
-    #update our database with the connection
-    add_entry(srcip, srcprt, curtime, abuse, latitude, longitude)
+
 
     try:
         conn.send(b"Welcome to the FBI Secret Database\nUsername:")
         hasprovidedusename = 0
+        morecommands = 0
+        command = ""
         timeout = time.time()
+
 # Extremely hacky attempt at some interaction
         while True:
 
@@ -87,30 +115,41 @@ while True:
             print(data.decode('utf-8', "ignore"))
             print(len(data))
 
+            if morecommands == 1:
+                command = command + data.decode('utf-8', "ignore")
+                c.execute("""UPDATE information SET command = ? WHERE uid = ?""",
+                          (data.decode('utf-8', "ignore") + command, uid))
+                connsq.commit()
+                conn.send(b"root@honeypie:~$")
+                continue
+
+
             # set timeout for stuck connections
-
-            print(time.time())
-            print(timeout)
-
             if time.time() > timeout + 10:
                 conn.close()
 
+            # Here client has provided user and password, see the warning message and tried to run a command
             if hasprovidedusename == 2:
                 conn.send(b"root@honeypie:~$")
+                # update our database with the connection
+                command = command + data.decode('utf-8', "ignore")
+                uid = uid +1
+                add_entry(uid, srcip, srcprt, curtime, abuse, latitude, longitude, username, password, command)
+                morecommands = 1
 
-                continue
+            # Warning banner sent
             if hasprovidedusename == 1:
-                conn.send(b"Welcome to the honeypot!:\nroot@honeypie:~$")
+                conn.send(banner)
                 hasprovidedusename = 2
+                password = data.decode('utf-8', "ignore")
                 continue
-
+            # Initial connect - need to ignore the data sent
             if len(data) in range(20, 30):
                 continue
 
-          #  if len(data) == 27:
-           #     continue
-
+            # Has provided a username
             if len(data) > 0:
+                username = data.decode('utf-8', "ignore")
                 conn.send(b"Password:")
                 hasprovidedusename = 1
                 continue
@@ -119,5 +158,8 @@ while True:
         break
 
     except:
+
         conn.close()
         continue
+    #except Exception as e:
+    #    print(e)
