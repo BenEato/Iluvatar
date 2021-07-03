@@ -7,7 +7,6 @@ from ip2geotools.databases.noncommercial import DbIpCity
 import atexit
 
 banner = b"""
-
  _    _                  _             
 | |  | |                (_)            
 | |  | | __ _ _ __ _ __  _ _ __   __ _ 
@@ -23,16 +22,16 @@ root@honeypie:~$"""
 # Function for long and lat
 
 def geo(ip):
-    #handle private ip for testing
-    if "192.168" in ip:
-        return "0", "#", "0"
-    else:
+
+    try:
         response = DbIpCity.get(ip, api_key='free')
 
         print(response.latitude)
         print(response.longitude)
         return response.latitude, "#", response.longitude
 
+    except:
+        return "0", "#", "0"
 # Get source ip and port
 
 def ipandport(inf):
@@ -60,8 +59,7 @@ sk=socket(AF_INET,SOCK_STREAM)
 sk.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 sk.bind(('0.0.0.0',23))
 
-# set my uid
-#TODO: Need a try here - try to get value, if not set uid to 0
+
 try:
     testuid = c.execute("SELECT uid FROM information ORDER BY uid DESC LIMIT 1").fetchall()
     uid = int(testuid[0][0])
@@ -80,7 +78,7 @@ while True:
 
     constr = str(conn)
 # Sanitizing the connection information to place into database (src, prt and abuse)
-#TODO: MAKE THIS INTO FUNCTIONS
+#TODO: MAKE THIS INTO FUNCTIONS - need a try loop
     srcip, srcprt = ipandport(constr)
     curtime = time.time()
     print(srcip)
@@ -88,11 +86,15 @@ while True:
     print(time.time())
 
 #getting my abuse email
-    qf = ContactFinder()
-    print(qf.find(srcip))
-    abuse = qf.find(srcip)
-    abuse = abuse[0]
+    try:
+        qf = ContactFinder()
+        print(qf.find(srcip))
+        abuse = qf.find(srcip)
+        abuse = abuse[0]
 
+    except:
+        abuse = "localip@localipaddress"
+        print(abuse)
     # get geo data
     LonLat = geo(srcip)
     latitude = LonLat[0]
