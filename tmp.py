@@ -7,7 +7,6 @@ from ip2geotools.databases.noncommercial import DbIpCity
 import atexit
 
 banner = b"""
-
  _    _                  _             
 | |  | |                (_)            
 | |  | | __ _ _ __ _ __  _ _ __   __ _ 
@@ -87,12 +86,15 @@ while True:
     print(time.time())
 
 #getting my abuse email
-    #TODO ADD TRY LOOP
-    qf = ContactFinder()
-    print(qf.find(srcip))
-    abuse = qf.find(srcip)
-    abuse = abuse[0]
+    try:
+        qf = ContactFinder()
+        print(qf.find(srcip))
+        abuse = qf.find(srcip)
+        abuse = abuse[0]
 
+    except:
+        abuse = "test@ronansucks.com.au"
+        print(abuse)
     # get geo data
     LonLat = geo(srcip)
     latitude = LonLat[0]
