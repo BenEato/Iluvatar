@@ -35,11 +35,14 @@ def geo(ip):
 # Get source ip and port
 
 def ipandport(inf):
-    srcipandport = inf.split("raddr",1)[1]
-    infip, infprt = srcipandport.split(",")
-    infprt = re.sub("[)>]", "", infprt)
-    infip = re.sub("[=(']", "", infip)
-    return infip, infprt
+    try:
+        srcipandport = inf.split("raddr",1)[1]
+        infip, infprt = srcipandport.split(",")
+        infprt = re.sub("[)>]", "", infprt)
+        infip = re.sub("[=(']", "", infip)
+        return infip, infprt
+    except:
+        return "0.0.0.0", "0"
 # Functions for adding to database
 
 def add_entry(uid, srcip, srcport, thetime, abuse, latitude, longitude, user, password, command):
